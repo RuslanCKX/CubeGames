@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using CubeWorldGameEngine;
@@ -17,11 +12,13 @@ namespace CubeWorldEditor
         //путь к игре по умолчанию
         public static string DefaultGamePath = "";
         //путь файла конфигурации редактора
-        private const string FilePath = @"config\\config";
+        private const string FilePath = "config\\config";
 
         //запись файла конфигурации
         public static bool WriteDefaultSetting()
         {
+            if (Directory.Exists("config") != true) Directory.CreateDirectory("config");
+
             StreamWriter settingWriter = new StreamWriter(File.Create(FilePath));
             //пока только одна путь к игре
             settingWriter.WriteLine("DefaultGamePath = " + DefaultGamePath);
@@ -32,9 +29,6 @@ namespace CubeWorldEditor
         //чтение дефолтовых настроек редактора
         public static bool ReadDefaultSetting()
         {
-            string tmpReadLine;
-            string[] tmpLines;
-
             //проверяем наличие файла
             if (File.Exists(FilePath) != true) return false;
             
@@ -42,11 +36,11 @@ namespace CubeWorldEditor
 
             while (settingsReader.EndOfStream != true)
             {
-                tmpReadLine = settingsReader.ReadLine();
+                string tmpReadLine = settingsReader.ReadLine();
 
                 if (tmpReadLine != null)
                 {
-                    tmpLines = tmpReadLine.Split('=');
+                    string[] tmpLines = tmpReadLine.Split('=');
 
                     if (tmpLines.Length != 2) return false;
 
@@ -61,7 +55,7 @@ namespace CubeWorldEditor
                     }
                 }
             }
-            
+
             settingsReader.Close();
 
             if (DefaultGamePath == null) return false;
@@ -79,8 +73,10 @@ namespace CubeWorldEditor
 
             if (defaultBrowserDialog.ShowDialog() == DialogResult.OK && defaultBrowserDialog.SelectedPath != null)
             {
-                DefaultGamePath = defaultBrowserDialog.SelectedPath;
+                DefaultGamePath = defaultBrowserDialog.SelectedPath + "\\";
+                WriteDefaultSetting();
             }
+
         }
 
         //инициализация редактора
@@ -94,32 +90,44 @@ namespace CubeWorldEditor
                     MessageBoxButton.YesNo);
                 if (msg != MessageBoxResult.Yes) return;
 
-                Config.SetGamePath();
+                SetGamePath();
 
-                if (Config.DefaultGamePath == null) return;
+                if (DefaultGamePath == null) return;
 
-                EngineMain.AppPath = Config.DefaultGamePath;
+                EngineMain.AppPath = DefaultGamePath;
 
-                if (EngineMain.InitPath() == false)
+                SetEnginePath();
+            }
+            else
+            {
+                SetEnginePath();
+            }
+        }
+
+        public static void SetEnginePath()
+        {
+            EngineMain.AppPath = DefaultGamePath;
+            
+            if (EngineMain.InitPath() == false)
+            {
+                //почемуто не найден файл ресурсов
+                //возможно первый запуск
+                if (EngineMain.IsResoursesFolderFound() != true || EngineMain.IsResPacksFileFound() != true)
                 {
-                    //почемуто не найден файл ресурсов
-                    //возможно первый запуск
-                    if (EngineMain.IsResoursesFolderFound() != true)
-                    {
-                        msg = MessageBox.Show("Путь к файлу ресурсов не найден! Создать?", "Ошибка",
+                    MessageBoxResult msg = MessageBox.Show("Путь к файлу ресурсов не найден! Создать?", "Ошибка",
                         MessageBoxButton.YesNo);
 
-                        if (msg != MessageBoxResult.Yes) return;
+                    if (msg != MessageBoxResult.Yes) return;
 
-                        Directory.CreateDirectory(EngineMain.AppPath + EngineMain.ResPath);
+                    if (EngineMain.IsResoursesFolderFound() != true) Directory.CreateDirectory(EngineMain.AppPath + EngineMain.ResPath);
 
-                        StreamWriter tmpFile =new StreamWriter(EngineMain.AppPath + EngineMain.ResPath + EngineMain.ResPacksFileName);
-                        tmpFile.Close();
-                    }
-                    
+                    StreamWriter tmpFile =
+                        new StreamWriter(EngineMain.AppPath + EngineMain.ResPath + EngineMain.ResPacksFileName);
+                    tmpFile.Close();
                 }
 
             }
         }
     }
+  
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CubeWorldGameEngine.Helpers;
 
 namespace CubeWorldGameEngine.Mods
 {
@@ -10,6 +11,9 @@ namespace CubeWorldGameEngine.Mods
     {
         string Name { get; }
         Version Version { get; }
-        Helpers.ModsTypeEnum.ModsTypes ModType { get; }
+        ModsInfo.ModsTypes ModType { get; }
+
+        void Init();
+
     }
 }
